@@ -48,6 +48,25 @@ public class Main {
 
     }
 
+    private static void sortDescending(Elpris[] priser) {
+        for (int i = 0; i < priser.length - 1; i++) {
+            for (int j = 0; j < priser.length - 1 - i; j++) {
+                if (priser[j].sekPerKWh() < priser[j + 1].sekPerKWh()) {
+                    Elpris temp = priser[j];
+                    priser[j] = priser[j + 1];
+                    priser[j + 1] = temp;
+                }
+            }
+        }
+    }
+
+    private static Elpris[] combineArrays(Elpris[] array1, Elpris[] array2) {
+        Elpris[] combined = new Elpris[array1.length + array2.length];
+        System.arraycopy(array1, 0, combined, 0, array1.length);
+        System.arraycopy(array2, 0, combined, array1.length, array2.length);
+        return combined;
+    }
+
     private static void printHelp() {
         System.out.println("Usage: java -cp target/classes com.example.Main [options]");
         System.out.println("Options:");
