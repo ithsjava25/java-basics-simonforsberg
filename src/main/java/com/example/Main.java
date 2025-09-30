@@ -9,20 +9,15 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.ToDoubleBiFunction;
 
 public class Main {
     public static void main(String[] args) {
-        String zone = null; // variabel för prisområden, sätt som null
-        LocalDate date = LocalDate.now(); // variabel för datum, satt som dagens datum om inget annat anges
-        boolean sorted = false; // variabel för sorteringsmetod, gör ej om ej anropad/kör om true
-        String charging = null; // variabel för laddningsmetod, gör ej om ej anropad
+        String zone = null;
+        LocalDate date = LocalDate.now();
+        boolean sorted = false;
+        String charging = null;
 
-        // TODO Konsekventa felmeddelanden
-
-        // TODO Se över flödet
-
-        //  --- Check command line argument(s) ---
+        //  --- Hantera kommandoradsargument ---
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--zone" -> {
@@ -36,7 +31,7 @@ public class Main {
                             }
                         }
                     } else {
-                        System.out.println("Ogiltig zon");
+                        System.out.println("Ogiltig zon: saknas värde efter --zone");
                         return;
                     }
                 }
@@ -96,38 +91,39 @@ public class Main {
         ElpriserAPI api = new ElpriserAPI();
 
         List<Elpris> todayList = api.getPriser(date, Prisklass.valueOf(zone));
-        Elpris[] todaysPrices = todayList.toArray(new Elpris[0]);
+        Elpris[] todayPrices = todayList.toArray(new Elpris[0]);
 
         List<Elpris> tomorrowList = api.getPriser(date.plusDays(1), Prisklass.valueOf(zone));
-        Elpris[] tomorrowsPrices = tomorrowList.toArray(new Elpris[0]);
+        Elpris[] tomorrowPrices = tomorrowList.toArray(new Elpris[0]);
 
-        //  --- Testa om priser hittas ---
-        if (todaysPrices.length == 0) {
+        //  --- Testa om priser finns ---
+        if (todayPrices.length == 0) {
             System.out.println("Inga priser tillgängliga för " + zone + " på " + date);
             return;
         }
 
-        // --- Sortera priserna i fallande/STIGANDE? ordning ---
-        if (sorted) sortAscending(todaysPrices);
+        // --- Sortera priserna i stigande ordning ---
+        if (sorted) sortAscending(todayPrices);
+        // if (sorted) sortDescending(todayPrices);
 
-        // if (sorted) sortDescending(todaysPrices);
-
+        // TODO Gör egen metod för utskriften?
         // --- Skriv ut dagens priser ---
         System.out.println("Elpriser för " + zone + " (" + date + "):");
-        for (Elpris p : todaysPrices) {
+        for (Elpris p : todayPrices) {
             int startHour = p.timeStart().getHour();
             int endHour = p.timeEnd().getHour();
             String priceStr = formatOre(p.sekPerKWh());
             System.out.printf("%02d-%02d %s öre%n", startHour, endHour, priceStr);
         }
 
+        // TODO Gör egen metod för utskrift av dagens medelpris/lägsta/högsta?
         // --- Medelpris för dagen ---
-        double mean = calculateMean(todaysPrices);
+        double mean = calculateMean(todayPrices);
         System.out.printf("Medelpris för %s: %s öre%n", date, formatOre(mean));
 
-        // --- Minsta och högsta timpris för dagen ---
-        Elpris minHour = findMin(todaysPrices);
-        Elpris maxHour = findMax(todaysPrices);
+        // --- Lägsta och högsta timpris för dagen ---
+        Elpris minHour = findMin(todayPrices);
+        Elpris maxHour = findMax(todayPrices);
         System.out.printf("Lägsta pris: %02d-%02d - %s öre%n",
                 minHour.timeStart().getHour(),
                 minHour.timeEnd().getHour(),
@@ -137,7 +133,8 @@ public class Main {
                 maxHour.timeEnd().getHour(),
                 formatOre(maxHour.sekPerKWh()));
 
-        // --- Optimal laddning om --charging används ---
+        // TODO Gör egen metod för detta?
+        // --- Optimalt laddningsfönster ---
         if (charging != null) {
             int hours;
             switch (charging) {
@@ -145,22 +142,24 @@ public class Main {
                 case "4h" -> hours = 4;
                 case "8h" -> hours = 8;
                 default -> {
-                    System.out.println("Fel: Okänt laddningsalternativ. Endast 2h, 4h eller 8h tillåtet.");
+                    System.out.println("Ogiltigt laddningsalternativ: endast 2h, 4h eller 8h tillåtet.");
                     return;
                 }
             }
-            // // Kombinera dagens + morgondagens priser för laddning
-            Elpris[] combinedPrices = combineArrays(todaysPrices, tomorrowsPrices);
 
+            // Kombinera dagens + morgondagens priser
+            Elpris[] combinedPrices = combineArrays(todayPrices, tomorrowPrices);
+
+            // Beräkna optimalt laddningsfönster
             Elpris[] window = findOptimalWindow(combinedPrices, hours);
 
-            // Medelpris för laddningsfönstret
+            // Medelpris för laddningsfönster
             double windowMean = calculateMean(window);
 
             // Hämta starttid för första timmen i fönstret
             String startTimeStr = String.format("%02d:%02d", window[0].timeStart().getHour(), window[0].timeStart().getMinute());
 
-            // Skriv ut med starttid
+            // Skriv ut laddningsfönster med starttid
             System.out.printf("%nPåbörja laddning kl %s för %dh:%n", startTimeStr, hours);
             for (Elpris p : window) {
                 String timeStr = String.format("%02d:%02d", p.timeStart().getHour(), p.timeStart().getMinute());
@@ -214,13 +213,6 @@ public class Main {
         }
     }
 
-    private static String formatOre(double sekPerKWh) {
-        double ore = sekPerKWh * 100.0;
-        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.forLanguageTag("sv-SE"));
-        DecimalFormat df = new DecimalFormat("0.00", symbols);
-        return df.format(ore);
-    }
-
     private static Elpris[] combineArrays(Elpris[] array1, Elpris[] array2) {
         Elpris[] combined = new Elpris[array1.length + array2.length];
         System.arraycopy(array1, 0, combined, 0, array1.length);
@@ -228,9 +220,8 @@ public class Main {
         return combined;
     }
 
-    // --- Sliding Window för optimal laddning ---
     private static Elpris[] findOptimalWindow(Elpris[] priser, int hours) {
-        if (priser.length < hours) return priser; // returnera allt om för få timmar
+        if (priser.length < hours) return priser;
 
         double minSum = Double.MAX_VALUE;
         int startIndex = 0;
@@ -246,6 +237,13 @@ public class Main {
         Elpris[] window = new Elpris[hours];
         System.arraycopy(priser, startIndex, window, 0, hours);
         return window;
+    }
+
+    private static String formatOre(double sekPerKWh) {
+        double ore = sekPerKWh * 100.0;
+        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.forLanguageTag("sv-SE"));
+        DecimalFormat df = new DecimalFormat("0.00", symbols);
+        return df.format(ore);
     }
 
     private static void printHelp() {
