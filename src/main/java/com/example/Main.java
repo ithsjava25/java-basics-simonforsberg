@@ -156,9 +156,9 @@ public class Main {
     }
 
     private static void printStats(Elpris[] todayPrices, LocalDate date) {
-        // Medelpris för dagen
+        // Beräkna medelpris för dagen
         double mean = calculateMean(todayPrices);
-        // Lägsta och högsta timpris för dagen
+        // Hitta lägsta och högsta timpris för dagen
         Elpris minHour = findMin(todayPrices);
         Elpris maxHour = findMax(todayPrices);
 
