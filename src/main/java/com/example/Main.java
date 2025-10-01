@@ -150,6 +150,68 @@ public class Main {
 
     }
 
+    private static void printChargingWindow(String charging, Elpris[] todayPrices, Elpris[] tomorrowPrices) {
+        int hours;
+        switch (charging) {
+            case "2h" -> hours = 2;
+            case "4h" -> hours = 4;
+            case "8h" -> hours = 8;
+            default -> {
+                System.out.println("Ogiltigt laddningsalternativ: endast 2h, 4h eller 8h tillåtet.");
+                return;
+            }
+        }
+
+        // Kombinera dagens + morgondagens priser
+        Elpris[] combinedPrices = combineArrays(todayPrices, tomorrowPrices);
+
+        // Beräkna optimalt laddningsfönster
+        Elpris[] window = findOptimalWindow(combinedPrices, hours);
+
+        // Medelpris för laddningsfönster
+        double windowMean = calculateMean(window);
+
+        // Hämta starttid för första timmen i fönstret
+        String startTimeStr = String.format("%02d:%02d", window[0].timeStart().getHour(), window[0].timeStart().getMinute());
+
+        // Skriv ut laddningsfönster med starttid
+        System.out.printf("%nPåbörja laddning kl %s för %dh:%n", startTimeStr, hours);
+        for (Elpris p : window) {
+            String timeStr = String.format("%02d:%02d", p.timeStart().getHour(), p.timeStart().getMinute());
+            String oreStr = formatOre(p.sekPerKWh());
+            System.out.printf("%s %s öre%n", timeStr, oreStr);
+        }
+        System.out.printf("Medelpris för fönster: %s öre%n", formatOre(windowMean));
+    }
+
+    private static void printStats(Elpris[] todayPrices, LocalDate date) {
+        // --- Medelpris för dagen ---
+        double mean = calculateMean(todayPrices);
+        // --- Lägsta och högsta timpris för dagen ---
+        Elpris minHour = findMin(todayPrices);
+        Elpris maxHour = findMax(todayPrices);
+
+        System.out.printf("Medelpris för %s: %s öre%n", date, formatOre(mean));
+        System.out.printf("Lägsta pris: %02d-%02d - %s öre%n",
+                minHour.timeStart().getHour(),
+                minHour.timeEnd().getHour(),
+                formatOre(minHour.sekPerKWh()));
+        System.out.printf("Högsta pris: %02d-%02d - %s öre%n",
+                maxHour.timeStart().getHour(),
+                maxHour.timeEnd().getHour(),
+                formatOre(maxHour.sekPerKWh()));
+    }
+
+    private static void printPrices(String zone, LocalDate date, Elpris[] todayPrices) {
+        System.out.println("Elpriser för " + zone + " (" + date + "):");
+        for (Elpris p : todayPrices) {
+            int startHour = p.timeStart().getHour();
+            int endHour = p.timeEnd().getHour();
+            String priceStr = formatOre(p.sekPerKWh());
+            System.out.printf("%02d-%02d %s öre%n", startHour, endHour, priceStr);
+        }
+    }
+
     private static double calculateMean(Elpris[] priser) {
         double sum = 0;
         for (Elpris p : priser) sum += p.sekPerKWh();
