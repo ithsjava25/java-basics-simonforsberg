@@ -108,30 +108,9 @@ public class Main {
 
         // TODO Gör egen metod för utskriften?
         // --- Skriv ut dagens priser ---
-        System.out.println("Elpriser för " + zone + " (" + date + "):");
-        for (Elpris p : todayPrices) {
-            int startHour = p.timeStart().getHour();
-            int endHour = p.timeEnd().getHour();
-            String priceStr = formatOre(p.sekPerKWh());
-            System.out.printf("%02d-%02d %s öre%n", startHour, endHour, priceStr);
-        }
-
-        // TODO Gör egen metod för utskrift av dagens medelpris/lägsta/högsta?
-        // --- Medelpris för dagen ---
-        double mean = calculateMean(todayPrices);
-        System.out.printf("Medelpris för %s: %s öre%n", date, formatOre(mean));
-
-        // --- Lägsta och högsta timpris för dagen ---
-        Elpris minHour = findMin(todayPrices);
-        Elpris maxHour = findMax(todayPrices);
-        System.out.printf("Lägsta pris: %02d-%02d - %s öre%n",
-                minHour.timeStart().getHour(),
-                minHour.timeEnd().getHour(),
-                formatOre(minHour.sekPerKWh()));
-        System.out.printf("Högsta pris: %02d-%02d - %s öre%n",
-                maxHour.timeStart().getHour(),
-                maxHour.timeEnd().getHour(),
-                formatOre(maxHour.sekPerKWh()));
+        printPrices(zone, date, todayPrices);
+        
+        printStats(todayPrices, date);
 
         // TODO Gör egen metod för detta?
         // --- Optimalt laddningsfönster ---
