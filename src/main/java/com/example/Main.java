@@ -102,50 +102,21 @@ public class Main {
             return;
         }
 
-        // --- Sortera priserna i stigande ordning ---
-        if (sorted) sortAscending(todayPrices);
+        // --- Sortera priser i fallande ordning ---
         // if (sorted) sortDescending(todayPrices);
 
-        // TODO Gör egen metod för utskriften?
+        // --- Sortera priser i stigande ordning ---
+        if (sorted) sortAscending(todayPrices);
+
         // --- Skriv ut dagens priser ---
         printPrices(zone, date, todayPrices);
-        
+
+        // --- Skriv ut medel/lägsta/högsta priser ---
         printStats(todayPrices, date);
 
-        // TODO Gör egen metod för detta?
         // --- Optimalt laddningsfönster ---
         if (charging != null) {
-            int hours;
-            switch (charging) {
-                case "2h" -> hours = 2;
-                case "4h" -> hours = 4;
-                case "8h" -> hours = 8;
-                default -> {
-                    System.out.println("Ogiltigt laddningsalternativ: endast 2h, 4h eller 8h tillåtet.");
-                    return;
-                }
-            }
-
-            // Kombinera dagens + morgondagens priser
-            Elpris[] combinedPrices = combineArrays(todayPrices, tomorrowPrices);
-
-            // Beräkna optimalt laddningsfönster
-            Elpris[] window = findOptimalWindow(combinedPrices, hours);
-
-            // Medelpris för laddningsfönster
-            double windowMean = calculateMean(window);
-
-            // Hämta starttid för första timmen i fönstret
-            String startTimeStr = String.format("%02d:%02d", window[0].timeStart().getHour(), window[0].timeStart().getMinute());
-
-            // Skriv ut laddningsfönster med starttid
-            System.out.printf("%nPåbörja laddning kl %s för %dh:%n", startTimeStr, hours);
-            for (Elpris p : window) {
-                String timeStr = String.format("%02d:%02d", p.timeStart().getHour(), p.timeStart().getMinute());
-                String oreStr = formatOre(p.sekPerKWh());
-                System.out.printf("%s %s öre%n", timeStr, oreStr);
-            }
-            System.out.printf("Medelpris för fönster: %s öre%n", formatOre(windowMean));
+            printChargingWindow(charging, todayPrices, tomorrowPrices);
         }
 
     }
@@ -166,9 +137,9 @@ public class Main {
         Elpris[] combinedPrices = combineArrays(todayPrices, tomorrowPrices);
 
         // Beräkna optimalt laddningsfönster
-        Elpris[] window = findOptimalWindow(combinedPrices, hours);
+        Elpris[] window = calculateOptimalWindow(combinedPrices, hours);
 
-        // Medelpris för laddningsfönster
+        // Beräkna medelpris för laddningsfönster
         double windowMean = calculateMean(window);
 
         // Hämta starttid för första timmen i fönstret
@@ -185,12 +156,13 @@ public class Main {
     }
 
     private static void printStats(Elpris[] todayPrices, LocalDate date) {
-        // --- Medelpris för dagen ---
+        // Medelpris för dagen
         double mean = calculateMean(todayPrices);
-        // --- Lägsta och högsta timpris för dagen ---
+        // Lägsta och högsta timpris för dagen
         Elpris minHour = findMin(todayPrices);
         Elpris maxHour = findMax(todayPrices);
 
+        // Skriv ut resultat
         System.out.printf("Medelpris för %s: %s öre%n", date, formatOre(mean));
         System.out.printf("Lägsta pris: %02d-%02d - %s öre%n",
                 minHour.timeStart().getHour(),
@@ -261,7 +233,7 @@ public class Main {
         return combined;
     }
 
-    private static Elpris[] findOptimalWindow(Elpris[] priser, int hours) {
+    private static Elpris[] calculateOptimalWindow(Elpris[] priser, int hours) {
         if (priser.length < hours) return priser;
 
         double minSum = Double.MAX_VALUE;
