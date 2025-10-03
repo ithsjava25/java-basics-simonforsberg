@@ -17,8 +17,8 @@ public class Main {
         boolean sorted = false;
         String charging = null;
 
+        // --- Om argument saknas, skriv ut hjälp ---
         if (args.length == 0) {
-            System.out.println("zone required");
             printHelp();
             return;
         }
@@ -88,16 +88,9 @@ public class Main {
             }
         }
         if (zone == null) {
-            System.out.println("zone required");
-            String inputZone = System.console().readLine("Ogiltigt zonalternativ: värde saknas efter --zone. Ange SE1|SE2|SE3|SE4: ").toUpperCase();
-            switch (inputZone) {
-                case "SE1", "SE2", "SE3", "SE4" -> zone = inputZone;
-                default -> {
-                    System.out.println("Ogiltig zon: " + inputZone);
-                    printHelp();
-                    return;
-                }
-            }
+            System.out.println("Fel: --zone måste anges!");
+            printHelp();
+            return;
         }
 
         //  --- Hämta priser ---
