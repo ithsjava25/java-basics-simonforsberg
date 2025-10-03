@@ -31,7 +31,7 @@ public class Main {
                             }
                         }
                     } else {
-                        System.out.println("Ogiltig zon: saknas värde efter --zone");
+                        System.out.println("Ogiltig zon: värde saknas efter --zone");
                         return;
                     }
                 }
@@ -46,7 +46,7 @@ public class Main {
                             return;
                         }
                     } else {
-                        System.out.println("Ogiltigt datum: saknas värde efter --date");
+                        System.out.println("Ogiltigt datum: värde saknas efter --date");
                         printHelp();
                         return;
                     }
@@ -65,7 +65,7 @@ public class Main {
                             }
                         }
                     } else {
-                        System.out.println("Ogiltigt laddningsalternativ: saknas värde efter --charging");
+                        System.out.println("Ogiltigt laddningsalternativ: värde saknas efter --charging");
                         printHelp();
                         return;
                     }
@@ -82,9 +82,15 @@ public class Main {
             }
         }
         if (zone == null) {
-            System.out.println("Fel: --zone måste anges!");
-            printHelp();
-            return;
+            String inputZone = System.console().readLine("Ogiltigt zonalternativ: värde saknas efter --zone. Ange SE1|SE2|SE3|SE4: ").toUpperCase();
+            switch (inputZone) {
+                case "SE1", "SE2", "SE3", "SE4" -> zone = inputZone;
+                default -> {
+                    System.out.println("Ogiltig zon: " + inputZone);
+                    printHelp();
+                    return;
+                }
+            }
         }
 
         //  --- Hämta priser ---
