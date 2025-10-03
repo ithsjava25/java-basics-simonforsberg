@@ -17,6 +17,12 @@ public class Main {
         boolean sorted = false;
         String charging = null;
 
+        if (args.length == 0) {
+            System.out.println("zone required");
+            printHelp();
+            return;
+        }
+
         //  --- Hantera kommandoradsargument ---
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -82,6 +88,7 @@ public class Main {
             }
         }
         if (zone == null) {
+            System.out.println("zone required");
             String inputZone = System.console().readLine("Ogiltigt zonalternativ: värde saknas efter --zone. Ange SE1|SE2|SE3|SE4: ").toUpperCase();
             switch (inputZone) {
                 case "SE1", "SE2", "SE3", "SE4" -> zone = inputZone;
